@@ -1,23 +1,11 @@
 const readline = require("readline");
 const { random, gettable } = require("./functions");
+const { ClientRequest } = require("http");
 
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
 });
-
-function allXorO(list) {
-  for (let i = 0; i < list.length; i++) {
-    if (list[i] !== " X " && list[i] !== " O ") {
-      return true; // ha minden elem X vagy o
-    }
-  }
-  return false; // ha van olyan elem, ami még nem X vagy O
-}
-
-// const listaa = [" X ", " O ", " X ", " X ", " O "];
-// const result = allXorO(listaa);
-// console.log(result);
 
 const introQuestion = () => {
   return new Promise((resolve, reject) => {
@@ -28,7 +16,7 @@ const introQuestion = () => {
       } else if (answer.toLowerCase() === "no") {
         console.log("Computers turn.");
       }
-      resolve();
+      resolve(answer);
     });
   });
 };
@@ -45,26 +33,74 @@ let emptySquares = [
   " 9 ",
 ];
 
-const turnQuestion = (end) => {
+let emptySquaresLength = emptySquares.length;
+let questionanswer = 0;
+
+const turnQuestion = (answer) => {
+  if (answer.toLowerCase() === "no" && questionanswer === 0) {
+    questionanswer++;
+    let computerAnswer = 0;
+    let done = false;
+
+    emptySquaresLength = emptySquaresLength - 1;
+
+    do {
+      computerAnswer = random(0, 8);
+
+      if (
+        emptySquares[computerAnswer] !== " O " &&
+        emptySquares[computerAnswer] !== " X "
+      ) {
+        done = true;
+        emptySquares[computerAnswer] = " O ";
+        emptySquaresLength = emptySquaresLength - 1;
+      }
+      if (emptySquaresLength === 0) {
+        done = true;
+        console.log("The game is draw.");
+        return resolve(true);
+      }
+    } while (done === false);
+    console.log(gettable(emptySquares));
+  }
+
   return new Promise((resolve, reject) => {
     rl.question("Place your X in square 1-9 ", (answer) => {
-      const square = parseInt(answer);
-
-      if (isNaN(square) || square <= 0 || square >= emptySquares.length) {
+      const square = parseInt(answer) - 1;
+      if (isNaN(square) || square < 0 || square >= emptySquares.length) {
         console.log("Invalid input. Please enter a number between 1 and 9.");
         return resolve(false);
       }
+
+      if (
+        emptySquares[answer - 1] === " X " ||
+        emptySquares[answer - 1] === " O "
+      ) {
+        console.log("Invalid square. Please choose another square.");
+        return resolve(false);
+      }
+
       emptySquares[answer - 1] = " X ";
       let computerAnswer = 0;
       let done = false;
+
+      emptySquaresLength = emptySquaresLength - 1;
+
       do {
         computerAnswer = random(0, 8);
+
         if (
           emptySquares[computerAnswer] !== " O " &&
           emptySquares[computerAnswer] !== " X "
         ) {
           done = true;
           emptySquares[computerAnswer] = " O ";
+          emptySquaresLength = emptySquaresLength - 1;
+        }
+        if (emptySquaresLength === 0) {
+          done = true;
+          console.log("The game is draw.");
+          return resolve(true);
         }
       } while (done === false);
 
@@ -225,7 +261,6 @@ const turnQuestion = (end) => {
         console.log("You Lose!");
         resolve(true);
       }
-
       resolve(false);
     }); // } answer, )question
     //  }// if
@@ -234,25 +269,13 @@ const turnQuestion = (end) => {
 }; // turnquestion
 
 async function game() {
-  await introQuestion();
-  let end = false;
-  const result = allXorO(emptySquares);
-  if (result === false) {
-    do {
-      end = await turnQuestion(end);
-    } while (end === false);
-  } else {
-    rl.close();
-  }
-}
+  let answer = await introQuestion();
 
-// async function game() {
-//   await introQuestion();
-//   let end = false;
-//   do {
-//     end = await turnQuestion(end);
-//   } while (end === false);
-//   rl.close();
-// }
+  let end = false;
+  do {
+    end = await turnQuestion(answer);
+  } while (end === false);
+  rl.close();
+}
 
 game();
