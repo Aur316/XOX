@@ -8,9 +8,13 @@ const rl = readline.createInterface({
 });
 
 const introQuestion = () => {
-  return new Promise((resolve, reject) => {
-    rl.question("Do you want to start? ", (answer) => {
-      if (answer.toLowerCase() === "yes") {
+  return new Promise((resolve) => {
+    rl.question("Do you want to start? (Yes/No) ", (answer) => {
+      const firstQuestion = answer.toLowerCase();
+      if (firstQuestion !== "yes" && firstQuestion !== "no") {
+        console.log("Invalid input. Please write Yes or No. ");
+        return resolve(false);
+      } else if (answer.toLowerCase() === "yes") {
         console.log("Please pick a square to place your ,,X'' ");
         console.log(gettable(emptySquares));
       } else if (answer.toLowerCase() === "no") {
@@ -55,16 +59,18 @@ const turnQuestion = (answer) => {
         emptySquares[computerAnswer] = " O ";
         emptySquaresLength = emptySquaresLength - 1;
       }
+
       if (emptySquaresLength === 0) {
         done = true;
         console.log("The game is draw.");
+        console.log("1");
         return resolve(true);
       }
     } while (done === false);
     console.log(gettable(emptySquares));
   }
 
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     rl.question("Place your X in square 1-9 ", (answer) => {
       const square = parseInt(answer) - 1;
       if (isNaN(square) || square < 0 || square >= emptySquares.length) {
@@ -85,27 +91,6 @@ const turnQuestion = (answer) => {
       let done = false;
 
       emptySquaresLength = emptySquaresLength - 1;
-
-      do {
-        computerAnswer = random(0, 8);
-
-        if (
-          emptySquares[computerAnswer] !== " O " &&
-          emptySquares[computerAnswer] !== " X "
-        ) {
-          done = true;
-          emptySquares[computerAnswer] = " O ";
-          emptySquaresLength = emptySquaresLength - 1;
-        }
-        if (emptySquaresLength === 0) {
-          done = true;
-          console.log("The game is draw.");
-          return resolve(true);
-        }
-      } while (done === false);
-
-      console.log(gettable(emptySquares));
-
       if (
         //vizszintes 1
         emptySquares[0] === " X " &&
@@ -261,6 +246,28 @@ const turnQuestion = (answer) => {
         console.log("You Lose!");
         resolve(true);
       }
+
+      do {
+        computerAnswer = random(0, 8);
+
+        if (
+          emptySquares[computerAnswer] !== " O " &&
+          emptySquares[computerAnswer] !== " X "
+        ) {
+          done = true;
+          emptySquares[computerAnswer] = " O ";
+          emptySquaresLength = emptySquaresLength - 1;
+        }
+
+        if (emptySquaresLength === 0) {
+          done = true;
+          console.log("The game is draw.");
+          return resolve(true);
+        }
+      } while (done === false);
+
+      console.log(gettable(emptySquares));
+
       resolve(false);
     }); // } answer, )question
     //  }// if
@@ -269,7 +276,10 @@ const turnQuestion = (answer) => {
 }; // turnquestion
 
 async function game() {
-  let answer = await introQuestion();
+  let answer = false;
+  do {
+    answer = await introQuestion();
+  } while (answer === false);
 
   let end = false;
   do {
